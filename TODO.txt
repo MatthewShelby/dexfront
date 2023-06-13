@@ -1,0 +1,3 @@
+Receive Input > on change > chack if turn swap btn should be enable.
+Chech Wallet/Provide Network before calls. it must change on SelectChain()
+TO address should dynamicly change to best router address. main.js => #3
