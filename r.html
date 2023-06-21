@@ -140,7 +140,7 @@
                                           let cell = row.insertCell();
                                           let text = ''
                                           if (key == 'details') {
-                                                console.info(element.details)
+                                                //console.info(element.details)
                                                 cell.innerHTML = (`<td style="max-width:300px;  "> <pre>  ${syntaxHighlight(JSON.stringify(element.details, undefined, 4))} </pre> </td>`)
                                           } else if (key == '__v') { }
                                           else {
@@ -176,6 +176,11 @@
                                     cls = 'key';
                               } else {
                                     cls = 'string';
+                                    if (match.length > 100) {
+                                          console.log('+50 for: ' + match)
+                                          var t = match.substring(0, 40) + '.....'
+                                          match = t
+                                    }
                               }
                         } else if (/true|false/.test(match)) {
                               cls = 'boolean';

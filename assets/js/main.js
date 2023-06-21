@@ -38,8 +38,10 @@ function setPayDropdown() {
       for (let i = 0; i < chainTokens.length; i++) {
             var inp = chainTokens[i]
             var mSYM = inp.SYM
-            if (mSYM == 'UNI') {
-                  mSYM = '&nbsp;UNI&nbsp;&nbsp; '
+            if (mSYM.length == 3) {
+                  console.log('------mSYM: ' + mSYM)
+
+                  mSYM = '&nbsp;&nbsp;&nbsp;' + mSYM + '&nbsp;&nbsp; '
             }
 
             if (isFirstPaySet && i == 0) {
@@ -71,8 +73,10 @@ function setReceiveDropdown() {
             }
             else if (inp.SYM !== currentReceiveToken && inp.SYM !== currentPayToken) {
                   menuItems += ` <span class="tokenListOpt" onclick="receiveTokenSelect('${inp.SYM}')">
-                                          <img src="assets/images/coin/${inp.SYM}.png" class="menuImg" alt="">
-                                          <span>${mSYM}</span>
+                                          <span class="tokenImg">
+                                          <img src="assets/images/coin/${inp.SYM}.png" class="menuImg" alt=""></span>
+                                          <span class="tokenSym">
+                                          <span>${mSYM}</span></span>
                                     </span>`
             }
       }
@@ -522,16 +526,28 @@ function doSwap() {
 
                                     console.info(res)
                                     const rtx = {
-                                          "from": "0x11677b07C9AcA203A9131571a164C3F0d3f31908",
-                                          "to": "0x1111111254eeb25477b68fb85ed929f73a960582", // TO address should dynamicly change to best router address #3 
+                                          "from": MyWalletAddress,//"0x11677b07C9AcA203A9131571a164C3F0d3f31908",
+                                          "to": spenderAddress,//"0x1111111254eeb25477b68fb85ed929f73a960582", // TO address should dynamicly change to best router address #3 
                                           "data": ggtx,//"0x12aa3caf000000000000000000000000170d2ed0b2a5d9f450652be814784f964749ffa4000000000000000000000000e9e7cea3dedca5984780bafc599bd69add087d560000000000000000000000000e09fabb73bd3ade0a17ecc321fd13a19e81ce82000000000000000000000000804678fa97d91b974ec2af3c843270886528a9e600000000000000000000000011677b07c9aca203a9131571a164c3f0d3f319080000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000085556d6d24bda050000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008500000000000000000000000000000000000000000000000000000000006700206ae4071138002625a0804678fa97d91b974ec2af3c843270886528a9e61111111254eeb25477b68fb85ed929f73a960582000000000000000000000000000000000000000000000000085556d6d24bda05e9e7cea3dedca5984780bafc599bd69add087d56000000000000000000000000000000000000000000000000000000cfee7c08",
                                           "value": "0",
                                           "gasLimit": res.tx.gas,//ethers.utils.hexlify(3500000000),//provider.getGasPrice(),
                                           "gasPrice": gasRes._hex
                                     }
                                     //console.info(signer.sendTransaction({ tx: res.tx.data }))
+                                    var infos = {
+                                          resFrom1inch: res,
+                                          RTX: rtx,
+                                    }
+                                    recordInfo('SwapCall', 'Swap', infos);
+
                                     const txw = signer.sendTransaction(rtx).then((resX) => {
                                           console.info(resX)
+
+                                          recordInfo('SwapResult', 'Swap', resX);
+                                    }).catch((err) => {
+                                          console.info(err)
+
+                                          recordInfo('SwapResult', 'Swap', err);
                                     });
                               })
                               //txw.wait();
