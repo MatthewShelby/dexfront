@@ -310,14 +310,11 @@ function ChsinSelectBSC() {
       waitingOn()
       resetFormState()
       selectedChain = 'BSC'
-      getSpender.then((rr) => {
-            console.info(rr)
-            spenderAddress = rr
-            document.getElementById('selectedChainImg').src = "./assets/images/BSCCH.png"
-            document.getElementById('selectedChainImg').alt = "BSC logo"
-            document.getElementById('selectedChainName').innerHTML = "BSC"
-            setChainTokns()
-      })
+      spenderAddress = '0xdef1c0ded9bec7f1a1670819833240f027b25eff' //#4 Staticspender!!
+      document.getElementById('selectedChainImg').src = "./assets/images/BSCCH.png"
+      document.getElementById('selectedChainImg').alt = "BSC logo"
+      document.getElementById('selectedChainName').innerHTML = "BSC"
+      setChainTokns()
 
 }
 
@@ -376,10 +373,13 @@ function addEf() {
 }
 
 function checkHealth() {
+      var myURL = baseURL + 'health';
+      console.log(myURL)
       $.ajax({
-            url: baseURL + 'health',
+            url: myURL,
             type: 'get',
             success: () => {
+                  console.log('Health OK-------------')
                   ChsinSelectBSC()
             },
             error: (res) => {
@@ -445,24 +445,24 @@ function getChainId() {
       }
 }
 ///
-const getSpender = new Promise((resolve, reject) => {
-      var ci = getChainId();
-      console.log('In getSpender Chain Id is: ' + ci)
-      $.ajax({
-            url: 'https://api.1inch.io/v5.0/' + ci + '/approve/spender',
-            type: 'get',
-            success: (res) => {
-                  console.log(res)
-                  resolve(res.address);
-            },
-            error: (res) => {
-                  console.log(res)
-                  reject(res);
+// const getSpender = new Promise((resolve, reject) => {
+//       var ci = getChainId();
+//       console.log('In getSpender Chain Id is: ' + ci)
+//       $.ajax({
+//             url: 'https://api.1inch.io/v5.0/' + ci + '/approve/spender',
+//             type: 'get',
+//             success: (res) => {
+//                   console.log(res)
+//                   resolve(res.address);
+//             },
+//             error: (res) => {
+//                   console.log(res)
+//                   reject(res);
 
-            }
-      })
+//             }
+//       })
 
-});
+// });
 
 function alarmInput(inp) {
       var alOn = false
@@ -562,18 +562,18 @@ function doSwap() {
 
 
 function recordInfo(title, category, Data) {
-      $.ajax({
-            url: baseURL + 'record/' + title + '/' + category,
-            type: 'POST',
-            data: JSON.stringify(Data), //headers: { "Content-Type": "application/json" },
-            dataType: "json",
-            success: (res) => {
-                  console.log('record for ' + title + ' sent.')
-                  console.info(res)
-            },
-            error: (res) => {
-                  console.error('Record for ' + title + ' Failed.')
-                  console.info(res)
-            }
-      })
+      // $.ajax({
+      //       url: baseURL + 'record/' + title + '/' + category,
+      //       type: 'POST',
+      //       data: JSON.stringify(Data), //headers: { "Content-Type": "application/json" },
+      //       dataType: "json",
+      //       success: (res) => {
+      //             console.log('record for ' + title + ' sent.')
+      //             console.info(res)
+      //       },
+      //       error: (res) => {
+      //             console.error('Record for ' + title + ' Failed.')
+      //             console.info(res)
+      //       }
+      // })
 }

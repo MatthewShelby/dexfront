@@ -217,16 +217,16 @@
       </div>
 
       <!-- Jquery -->
-      <!-- <script src="https://code.jquery.com/jquery-3.7.0.js"
-            integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script> -->
-      <script type="text/javascript" src="./node_modules/jquery/dist/jquery.js"></script>
+      <script src="https://code.jquery.com/jquery-3.7.0.js"
+            integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+      <!-- <script type="text/javascript" src="./node_modules/jquery/dist/jquery.js"></script> -->
 
 
       <!-- Ethers -->
-      <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.0/ethers.umd.min.js"
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.0/ethers.umd.min.js"
             integrity="sha512-+Ftowzj6zmwHlez4gpQxd7QQUzK/ocgu10pukN3Pyqblni7yJ9r/WTpNHoYKL4DGOp5givxSUZjJcVY7Az9OAQ=="
-            crossorigin="anonymous" referrerpolicy="no-referrer"></script> -->
-      <script type="text/javascript" src="./node_modules/ethers/dist/ethers.umd.js"></script>
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+      <!-- <script type="text/javascript" src="./node_modules/ethers/dist/ethers.umd.js"></script> -->
 
       <!-- Const Variables -->
       <script src="./assets/js/const.js"></script>
@@ -292,16 +292,17 @@
       <script>
 
             $(document).ready(() => {
+                  waitingOn()
                   console.log('Ready => Start')
                   checkForWallet()
-                  waitingOff()
+                  //waitingOff()
                   addEf()
                   checkHealth()
             })
 
 
 
-            function ch() {
+            function changeWallet() {
                   window.ethereum.request({
                         method: 'wallet_switchEthereumChain', params: [{ chainId: '0x1' }]
                         // method: "wallet_addEthereumChain",
