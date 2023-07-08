@@ -147,6 +147,9 @@
       background-color: #001624;
       margin: 0px;
       padding-top: 12px;
+      background-repeat: repeat;
+      background-size: cover;
+      background-position: center;
 }
 
 body {

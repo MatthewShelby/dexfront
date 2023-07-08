@@ -6,8 +6,10 @@ TO address should dynamicly change to best router address. main.js => #3
 #6 record error data in case error has happend
 #7 Add 3-5 retry in case of error
 #8 Token Decimals 
-
-
+#9 Check swap amount is <= allowance
+#10 MAX button
+#11 say something when approve is done.
+#11 say something when swap is done.
 
 
 Ideas:

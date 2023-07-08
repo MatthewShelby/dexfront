@@ -87,18 +87,6 @@ function setReceiveDropdown() {
 }
 
 
-// depritiate it
-function afterPriceCame() {
-      console.log('After Called p: ' + isPayPriceFetched + '    res: ' + isReceivePriceFetched)
-      if (isPayPriceFetched && isReceivePriceFetched) {
-            //setPrices()
-            document.getElementById('payTokenInput').addEventListener('input', setPayAmount)
-            document.getElementById('receiveTokenInput').addEventListener('input', setReceiveAmount)
-            setPayAmount()
-            waitingOff()
-            isPriceFetched = true
-      }
-}
 
 
 function getPairPrice(isFor) {
@@ -161,60 +149,6 @@ function getPairPrice(isFor) {
 }
 
 
-// depritiate it
-function getPrice(tAddress, isFor) {
-      if (isFor == 'pay') {
-            isPayPriceFetched = false
-      }
-      if (isFor == 'receive') {
-            isReceivePriceFetched = false
-      }
-
-      console.log('GetPerice Started.  itIsFor: ' + isFor)
-      jQuery.ajax({
-            url: `${baseURL}getTokenPrice?address=${tAddress}&chain=${selectedChain}`,
-            type: 'get',
-            success: function (res) {
-                  console.info(res)
-                  console.log('currentPayToken: ' + currentPayToken + '   -currentReceiveToken: ' + currentReceiveToken)
-                  if (isFor == 'pay') {
-                        payTokenPrice = res.data.usdPrice
-                        isPayPriceFetched = true
-                        payTokenDecimals = Number(res.data.tokenDecimals)
-                        checkAllowance(getAddressBySymbol(currentPayToken), MyWalletAddress, payTokenDecimals, currentPayToken);
-                        // LogFor
-
-
-                  }
-                  if (isFor == 'receive') {
-                        receiveTokenPrice = res.data.usdPrice
-                        isReceivePriceFetched = true
-                        receiveTokenDecimals = Number(res.data.tokenDecimals)
-
-                        console.log(' Receive Price for ' + res.data.tokenSymbol + 'has been set to: ' + receiveTokenPrice)
-                        console.log('MyWalletAddress' + MyWalletAddress)
-                        /*.then((res) => {
-                              console.log('The Allowance: ' + Number(res._hex))
-                        })//HERE/*/
-
-                  }
-                  var info = {
-                        tAddress: tAddress,
-                        selectedChain: selectedChain,
-                        symbol: res.data.tokenSymbol,
-                        callResult: res
-                  }
-                  recordInfo('For_' + isFor, 'Get_Price', info)
-                  afterPriceCame()
-            },
-            error: function (res) {
-                  console.log('Error =>')
-                  console.info(res)
-                  console.log('Errored address: ' + tAddress)
-                  errored('unknown')
-            }
-      })
-}
 
 function errored(er) {
       waitingOff()
@@ -490,13 +424,13 @@ function checkAllowance(contract, owner, decimals, symbol) {
       allowance(contract, owner, spenderAddress).then((res) => {
             console.info(res)
             allowanceAmount = Number(res._hex) / 10 ** decimals;
-            console.log('@@@ Allowance: ' + allowanceAmount)
+            console.log('@@@ Allowance: ' + toFixed(allowanceAmount))
             document.getElementById('allowTXT').style.display = 'block'
             document.getElementById('allowWaiting').style.display = 'none'
             document.getElementById('allowanceBtn').addEventListener('click', doApprove)
 
             if (allowanceAmount > 0) {
-                  document.getElementById('allowTXT').innerHTML = `You can Swap up to ${allowanceAmount + ' ' + symbol + 's'}`
+                  document.getElementById('allowTXT').innerHTML = `You can Swap up to ${toFixed(allowanceAmount) + ' ' + symbol + 's'}`
                   document.getElementById('swapBtn').disabled = false;
                   document.getElementById('swapBtn').addEventListener('click', doSwap)
                   document.getElementById('allowanceBtn').innerHTML = `+`
@@ -525,25 +459,7 @@ function getChainId() {
             errored("Could not find Chain ID. Selected chain not detected.")
       }
 }
-///
-// const getSpender = new Promise((resolve, reject) => {
-//       var ci = getChainId();
-//       console.log('In getSpender Chain Id is: ' + ci)
-//       $.ajax({
-//             url: 'https://api.1inch.io/v5.0/' + ci + '/approve/spender',
-//             type: 'get',
-//             success: (res) => {
-//                   console.log(res)
-//                   resolve(res.address);
-//             },
-//             error: (res) => {
-//                   console.log(res)
-//                   reject(res);
 
-//             }
-//       })
-
-// });
 
 function alarmInput(inp) {
       var alOn = false
@@ -575,27 +491,43 @@ function doApprove() {
       var contract = getAddressBySymbol(currentPayToken)
       var info = {
             contract: contract,
-            owner: owner,
-            symbol: symbol,
+            owner: MyWalletAddress,
+            symbol: currentPayToken,
             spenderAddress: spenderAddress,
             allowanceAmount: inpVal,
       }
       recordInfo("Call for approve", 'Allowance', info)
       approve(contract, spenderAddress, inpVal.toString()).then((res) => {
             console.info(res)
-
+            info.result = res
+            recordInfo("Results for approve", 'Allowance', info)
             setTimeout(() => {
                   checkAllowance(getAddressBySymbol(currentPayToken), MyWalletAddress, payTokenDecimals, currentPayToken);
             }, 9000);
+      }).catch((err) => {
+            console.info('approve error')
+            console.info(err)
+            info.message = err.message
+            info.result = err
+            recordInfo("Results for approve", 'Allowance', info)
       })
 }
 
 function doSwap() {
       if (Number(document.getElementById('payTokenInput').value) == 0) { alarmInput('pay') } else {
             if (Number(document.getElementById('receiveTokenInput').value) == 0) { alarmInput('receive') } else {
-                  var inpVal = Number(document.getElementById('payTokenInput').value) * (10 ** payTokenDecimals);//Working here
-                  var mnmurl = `${baseURL}pairPrice/${selectedChain}/${currentPayToken}/${currentReceiveToken}/${inpVal}/${Number(slippage) / 10}`
+                  //var inpVal = Number(document.getElementById('payTokenInput').value) * (10 ** payTokenDecimals);//Working here
+                  var inpVal = FixAmount(document.getElementById('payTokenInput').value, payTokenDecimals);//Working here
+                  var slpg = Number(slippage) * 0.01;
+                  var mnmurl = `${baseURL}pairPrice/${selectedChain}/${currentPayToken}/${currentReceiveToken}/${inpVal}/${slpg}`
                   console.log(mnmurl)
+                  var swapReq = {
+                        selectedChain: selectedChain,
+                        currentPayToken: currentPayToken,
+                        currentReceiveToken: currentReceiveToken,
+                        inpVal: inpVal,
+                        slippage: slpg,
+                  }
                   $.ajax({
                         url: mnmurl,
                         type: 'get',
@@ -614,8 +546,9 @@ function doSwap() {
                                     }
                                     console.info(rtx)
                                     var infos = {
-                                          resFrom1inch: res,
-                                          RTX: rtx,
+                                          swapRequest: swapReq,
+                                          res0x: res,
+                                          Transaction: rtx,
                                           time: new Date(Date.now())
 
                                     }
@@ -623,10 +556,20 @@ function doSwap() {
 
                                     signer.sendTransaction(rtx).then((resX) => {
                                           console.info(resX)
-                                          recordInfo('SwapResult', 'Swap', resX);
+                                          infos.results = resX
+                                          recordInfo('SwapResultSucess', 'Swap', resX);
+                                          setTimeout(() => {
+                                                provider.getTransactionReceipt(resX.hash).then((tres) => {
+                                                      console.log('getTransactionReceipt for ' + resX.hash)
+                                                      console.info(tres)
+                                                      recordInfo('TransactionReceipt', 'Swap', tres);
+                                                })
+                                          }, 6000);
+
                                     }).catch((err) => {
                                           console.info(err)
-                                          recordInfo('SwapResult', 'Swap', err);
+                                          infos.results = resX
+                                          recordInfo('SwapResultError', 'Swap', err);
                                     });
                               })
                         },
@@ -646,17 +589,46 @@ function recordInfo(title, category, Data) {
             data: JSON.stringify(Data),
             dataType: "json",
             success: (res) => {
-                  console.log('record for ' + title + ' sent.')
-                  console.info(res)
+                  // console.log('record for ' + title + ' sent.')
+                  // console.info(res)
             },
             error: (res) => {
-                  console.error('Record for ' + title + ' Failed.')
+                  console.error('Record for <' + title + '> Failed.')
                   console.info(res)
             }
       })
 }
 
+function FixAmount(value, decimals) {
+      //  This must come from caller based on the currency
+      //var decimals = 18;
+      var theVal = value //document.getElementById('payTokenInput').value;
+      console.log('theVal ' + theVal)
+      var decIndex = -1;
+      for (let i = 0; i < theVal.length; i++) {
+            if (theVal[i] == '.') {
+                  console.log('decimal point is in the index of: ' + i)
+                  decIndex = i
+            }
 
+      }
+
+      if (theVal.length - decimals - 1 > decIndex) {
+            console.log('long lengt ------------------')
+      }
+
+      var result = ''
+      for (let i = 0; i <= decIndex + decimals; i++) {
+            var toAdd = '0'
+            if (i != decIndex) {
+                  if (i < theVal.length) {
+                        toAdd = theVal[i]
+                  }
+                  result += toAdd
+            }
+      }
+      return result
+}
 function connectButtonChange(name) {
       var imgrul = ''
       if (name == 'metamask') {
@@ -694,4 +666,22 @@ function switcher() {
                   }
             }, 2000);
       }
+}
+
+function toFixed(x) {
+      if (Math.abs(x) < 1.0) {
+            var e = parseInt(x.toString().split('e-')[1]);
+            if (e) {
+                  x *= Math.pow(10, e - 1);
+                  x = '0.' + (new Array(e)).join('0') + x.toString().substring(2);
+            }
+      } else {
+            var e = parseInt(x.toString().split('+')[1]);
+            if (e > 20) {
+                  e -= 20;
+                  x /= Math.pow(10, e);
+                  x += (new Array(e + 1)).join('0');
+            }
+      }
+      return x;
 }

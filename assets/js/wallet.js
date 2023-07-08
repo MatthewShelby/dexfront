@@ -34,6 +34,8 @@ function checkForWallet(alert) {
                         signer.getAddress().then((sres) => {
                               console.log('## HERE - 4')
                               MyWalletAddress = sres
+                              console.log('## HERE - 4   MyWalletAddress: ' + MyWalletAddress)
+
                               connectButtonChange(walletName)
 
                               if (walletNetworkId == selectedChainId) {
@@ -42,7 +44,23 @@ function checkForWallet(alert) {
                                     checkAllowance(payTokenAddress, MyWalletAddress, 18, currentPayToken)
                               } else {
                                     console.log('## HERE - 9   diffrent chain id')
-
+                                    window.ethereum.request({
+                                          method: "wallet_addEthereumChain",
+                                          params: [{
+                                                chainId: "0x38",
+                                                rpcUrls: ["https://bsc-dataseed.binance.org/"],
+                                                chainName: "Binance Smart Chain",
+                                                nativeCurrency: {
+                                                      name: "BNB",
+                                                      symbol: "BNB",
+                                                      decimals: 18
+                                                },
+                                                blockExplorerUrls: ["https://bscscan.com/"]
+                                          }]
+                                    }).then(() => {
+                                          console.log('Network Change Accepted.')
+                                          window.location.href = window.location.href
+                                    });
                               }
                         })
                   });
