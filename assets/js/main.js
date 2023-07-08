@@ -1,5 +1,6 @@
 // Currently Selected Chain
 var selectedChain = 'ETH'
+var selectedChainId = 1
 
 // Info of tokens avaliable on the selected chain.  array of objects
 var chainTokens = new Array();
@@ -9,82 +10,84 @@ var spenderAddress
 
 var payTokenPrice, receiveTokenPrice, isPriceFetched, isPayPriceFetched, isReceivePriceFetched
 
-var payTokenDecimals, receiveTokenDecimals
+var payTokenAddress, payTokenDecimals, receiveTokenAddress, receiveTokenDecimals
 
 
+var currentPrice = 0
 var currentPayToken = ''
 var currentReceiveToken = ''
 var isFirstPaySet = true;
 var isFirstReceiveSet = true;
 
-
+// Number of calls for price data
+var tryfetchPairPrice = 0;
 
 function setChainTokns() {
       console.log('setChainTokns => Start')
+      chainTokens = BSCTokens;
 
-      for (let i = 0; i < TokensConstData.length; i++) {
-            const element = TokensConstData[i];
-            if (element.Chain == selectedChain) {
-                  chainTokens = element.tokens;
-            }
-      }
       setPayDropdown()
-      setReceiveDropdown()
+      setTimeout(() => {
+            setReceiveDropdown()
+      }, 200);
 }
 
 function setPayDropdown() {
       console.log('setPayDropdown => Start')
       var menuItems = '';
       for (let i = 0; i < chainTokens.length; i++) {
-            var inp = chainTokens[i]
-            var mSYM = inp.SYM
-            if (mSYM.length == 3) {
-                  console.log('------mSYM: ' + mSYM)
-
-                  mSYM = '&nbsp;&nbsp;&nbsp;' + mSYM + '&nbsp;&nbsp; '
-            }
+            var symbol = chainTokens[i].symbol
 
             if (isFirstPaySet && i == 0) {
-                  payTokenSelect(inp.SYM)
+                  payTokenSelect(symbol)
                   isFirstPaySet = false
-                  console.log('defult pay set to: ' + inp.SYM)
+                  console.log('defult pay set to: ' + symbol)
             }
-            else if (inp.SYM !== currentReceiveToken && inp.SYM !== currentPayToken) {
-                  menuItems += ` <span class="tokenListOpt" onclick="payTokenSelect('${inp.SYM}')">
-                                          <img src="assets/images/coin/${inp.SYM}.png" class="menuImg" alt="">
-                                          <span>${mSYM}</span>
+            else if (symbol !== currentReceiveToken && symbol !== currentPayToken) {
+                  menuItems += ` <span class="tokenListOpt" onclick="payTokenSelect('${symbol}')">
+                                          <img src="assets/images/coin/${symbol}.png" class="menuImg" alt="">
+                                          <span class="tokenSym">
+                                          <span>${symbol}</span></span>
                                     </span>`
+
             }
       }
       document.getElementById('payDropdown').innerHTML = menuItems;
 }
 
 function setReceiveDropdown() {
+      console.log('setReceiveDropdown Start')
       var menuItems = '';
       for (let i = 0; i < chainTokens.length; i++) {
-            var inp = chainTokens[i]
-            var mSYM = inp.SYM
-            if (mSYM == 'UNI') {
-                  mSYM = '&nbsp;UNI&nbsp;&nbsp; '
-            }
+            var symbol = chainTokens[i].symbol
+
             if (i == 1 && isFirstReceiveSet) {
-                  receiveTokenSelect(inp.SYM)
+                  receiveTokenSelect(symbol)
                   isFirstReceiveSet = false
+                  setTimeout(() => {
+                        setPayDropdown()
+                  }, 1000);
             }
-            else if (inp.SYM !== currentReceiveToken && inp.SYM !== currentPayToken) {
-                  menuItems += ` <span class="tokenListOpt" onclick="receiveTokenSelect('${inp.SYM}')">
-                                          <span class="tokenImg">
-                                          <img src="assets/images/coin/${inp.SYM}.png" class="menuImg" alt=""></span>
+            else if (symbol !== currentReceiveToken && symbol !== currentPayToken) {
+                  menuItems += ` <span class="tokenListOpt" onclick="receiveTokenSelect('${symbol}')">
+                                          <img src="assets/images/coin/${symbol}.png" class="menuImg" alt="">
                                           <span class="tokenSym">
-                                          <span>${mSYM}</span></span>
+                                          <span>${symbol}</span></span>
                                     </span>`
+                  // menuItems += ` <span class="tokenListOpt" onclick="receiveTokenSelect('${symbol}')">
+                  //                         <span class="tokenImg">
+                  //                         <img src="assets/images/coin/${symbol}.png" class="menuImg" alt=""></span>
+                  //                         <span class="tokenSym">
+                  //                         <span>${symbol}</span></span>
+                  //                   </span>`
             }
       }
       document.getElementById('receiveDropdown').innerHTML = menuItems;
+
 }
 
 
-
+// depritiate it
 function afterPriceCame() {
       console.log('After Called p: ' + isPayPriceFetched + '    res: ' + isReceivePriceFetched)
       if (isPayPriceFetched && isReceivePriceFetched) {
@@ -97,6 +100,68 @@ function afterPriceCame() {
       }
 }
 
+
+function getPairPrice(isFor) {
+
+      document.getElementById('fetchedPriceWait').style.display = 'block'
+      document.getElementById('fetchedPrice').innerHTML = ''
+      var value = Number(document.getElementById('payTokenInput').value) * (10 ** payTokenDecimals);
+      if (value == 0) value = (10 ** payTokenDecimals)
+      var furl = `${baseURL}pairPrice/${selectedChain}/${currentPayToken}/${currentReceiveToken}/${value}/0.1`
+      console.log('furl: ' + furl)
+      console.log('tryfetchPairPrice: ' + tryfetchPairPrice)
+      $.ajax({
+            url: furl,
+            type: 'get',
+            success: function (res) {
+                  console.log('===####   getPairPrice   ####===')
+                  console.info(res)
+                  currentPrice = Number(res.data.price)
+                  spenderAddress = res.data.to
+                  isPriceFetched = true
+                  document.getElementById('payTokenInput').addEventListener('input', setPayAmount)
+                  document.getElementById('receiveTokenInput').addEventListener('input', setReceiveAmount)
+                  if (isFor == 'pay') {
+                        isPayPriceFetched = true
+                        setReceiveAmount()
+                        if (isWalletConnected) {
+                              console.log('@@@ check allowance in price get')
+                              checkAllowance(payTokenAddress, MyWalletAddress, payTokenDecimals, currentPayToken)
+                        }
+                  } else {
+                        setPayAmount()
+                  }
+
+                  var eped = Math.round((currentPrice + Number.EPSILON) * 100) / 100
+                  document.getElementById('fetchedPriceWait').style.display = 'none'
+                  document.getElementById('fetchedPrice').innerHTML = `
+                  1 ${currentPayToken} ≈ ${eped} ${currentReceiveToken}`
+                  tryfetchPairPrice = 0;
+            },
+            error: (err) => {
+                  // console.error(err)
+                  console.info(err)
+                  // console.info(JSON.parse(err.responseText))
+                  console.error(JSON.parse(err.responseText))
+                  if (err.responseJSON.data == "Client network socket disconnected before secure TLS connection was established") {
+                        console.log('catchedddddd')
+                        if (tryfetchPairPrice < 5) {
+                              setTimeout(() => {
+                                    tryfetchPairPrice++
+                                    getPairPrice(isFor)
+                              }, 3000);
+                        } else {
+
+                              errored('Cloud not fetch Price Data.   \nPlease Retry after a minute or change the currency or ')
+                        }
+
+                  }
+            }
+      })
+}
+
+
+// depritiate it
 function getPrice(tAddress, isFor) {
       if (isFor == 'pay') {
             isPayPriceFetched = false
@@ -105,7 +170,7 @@ function getPrice(tAddress, isFor) {
             isReceivePriceFetched = false
       }
 
-      console.log('isFor: ' + isFor)
+      console.log('GetPerice Started.  itIsFor: ' + isFor)
       jQuery.ajax({
             url: `${baseURL}getTokenPrice?address=${tAddress}&chain=${selectedChain}`,
             type: 'get',
@@ -118,6 +183,7 @@ function getPrice(tAddress, isFor) {
                         payTokenDecimals = Number(res.data.tokenDecimals)
                         checkAllowance(getAddressBySymbol(currentPayToken), MyWalletAddress, payTokenDecimals, currentPayToken);
                         // LogFor
+
 
                   }
                   if (isFor == 'receive') {
@@ -152,6 +218,7 @@ function getPrice(tAddress, isFor) {
 
 function errored(er) {
       waitingOff()
+      //#6 record error data
       window.alert('Operation failed with error: \n' + er + '\nPlease reload the page using Ctrl + Shift + R \nor contact support.')
 }
 
@@ -160,7 +227,11 @@ function setReceiveAmount() {
       if (payInp != '' && isPriceFetched) {
             console.log('payInp: ' + payInp + '   -payTokenPrice: ' + payTokenPrice + '   -receiveTokenPrice: ' + receiveTokenPrice)
             payInp = Number(payInp)
-            var receiveMount = payInp * receiveTokenPrice / payTokenPrice
+            //OLD:
+            //var receiveMount = payInp * receiveTokenPrice / payTokenPrice
+
+            //NEW: 
+            var receiveMount = payInp / currentPrice
             document.getElementById('payTokenInput').value = receiveMount
             //console.log(receiveMount)
       }
@@ -171,17 +242,25 @@ function setPayAmount() {
       if (payInp != '' && isPriceFetched) {
             console.log('payInp: ' + payInp + '   -payTokenPrice: ' + payTokenPrice + '   -receiveTokenPrice: ' + receiveTokenPrice)
             payInp = Number(payInp)
-            var receiveMount = payInp * payTokenPrice / receiveTokenPrice
+            // OLD Line:
+            // var receiveMount = payInp * payTokenPrice / receiveTokenPrice
+
+            //NEW Line:
+            var receiveMount = payInp * currentPrice
             document.getElementById('receiveTokenInput').value = receiveMount
             //document.getElementById('payTokenInput').style.border = 'none';
 
+            waitingOff()
             //console.log(receiveMount)
-            if (payInp > allowanceAmount) {
-                  document.getElementById('swapBtn').disabled = true;
 
-            } else {
-                  document.getElementById('swapBtn').disabled = false;
-            }
+
+            //#5 The Check Allowance part
+            // if (payInp > allowanceAmount) {
+            //       document.getElementById('swapBtn').disabled = true;
+
+            // } else {
+            //       document.getElementById('swapBtn').disabled = false;
+            // }
       }
 }
 
@@ -194,34 +273,40 @@ function setPayAmount() {
 
 function getAddressBySymbol(sym) {
       console.log('getAddressBySymbol => Start')
-      for (let i = 0; i < TokensConstData.length; i++) {
-            const element = TokensConstData[i];
-            if (element.Chain == selectedChain) {
-                  for (let j = 0; j < element.tokens.length; j++) {
-                        const ele = element.tokens[j];
-                        if (ele.SYM == sym) {
-                              return ele.address
-                        }
-                  }
+      for (let i = 0; i < chainTokens.length; i++) {
+            const element = chainTokens[i];
+            //if (element.Chain == selectedChain) {
+            // for (let j = 0; j < element.tokens.length; j++) {
+            // const ele = element.tokens[j];
+            if (element.symbol == sym) {
+                  return element.address
             }
+            // }
+            //}
       }
 }
 
 function payTokenSelect(inp) {
-      waitingOn()
+      //waitingOn()
       console.log('call for payTokenSelect: ' + inp)
       document.getElementById('payTokenName').innerHTML = inp;
       document.getElementById('payTokenImg').src = `./assets/images/coin/${inp}.png`
       currentPayToken = inp
+      payTokenAddress = chainTokens.find(t => t.symbol == currentPayToken).address
+      payTokenDecimals = chainTokens.find(t => t.symbol == currentPayToken).decimal
+      console.log('Find pay address: ' + payTokenAddress)
+      console.log('Find pay payTokenDecimals: ' + payTokenDecimals)
       if (!isFirstPaySet) {
             setPayDropdown()
             setReceiveDropdown()
+            if (!swithching) {
+                  getPairPrice('pay')
+            }
       }
-      getPrice(getAddressBySymbol(inp), 'pay')
 }
 
 function receiveTokenSelect(inp) {
-      waitingOn()
+      //waitingOn()
       console.log('call for receiveTokenSelect' + inp)
 
       document.getElementById('receiveTokenName').innerHTML = inp;
@@ -231,7 +316,9 @@ function receiveTokenSelect(inp) {
             setPayDropdown()
             setReceiveDropdown()
       }
-      getPrice(getAddressBySymbol(inp), 'receive')//isPayPriceFetched
+      //getPrice(getAddressBySymbol(inp), 'receive')//isPayPriceFetched
+      getPairPrice()
+      //waitingOff()
 }
 
 
@@ -291,11 +378,13 @@ function resetFormState() {
       isReceivePriceFetched = false
 }
 
+// Need to update ( be like the ChsinSelectBSC())
 function ChsinSelectETH() {
       console.log('ETH SELECTED')
       waitingOn()
       resetFormState()
       selectedChain = 'ETH'
+
       getSpender.then((rr) => {
             spenderAddress = rr
             document.getElementById('selectedChainImg').src = "./assets/images/ETHCH.png"
@@ -310,6 +399,8 @@ function ChsinSelectBSC() {
       waitingOn()
       resetFormState()
       selectedChain = 'BSC'
+      selectedChainId = 56
+      checkForWallet(false)
       spenderAddress = '0xdef1c0ded9bec7f1a1670819833240f027b25eff' //#4 Staticspender!!
       document.getElementById('selectedChainImg').src = "./assets/images/BSCCH.png"
       document.getElementById('selectedChainImg').alt = "BSC logo"
@@ -318,6 +409,7 @@ function ChsinSelectBSC() {
 
 }
 
+// Need to update ( be like the ChsinSelectBSC())
 function ChsinSelectTBSC() {
       console.log('TBSC SELECTED')
       waitingOn()
@@ -334,13 +426,13 @@ function ChsinSelectTBSC() {
 
 function payTokenOpen() {
       setTimeout(() => {
-            document.getElementById("payDropdown").classList.toggle("show");
+            document.getElementById("payDropdownFrm").classList.toggle("show");
       }, 100);
 }
 
 function receiveTokenOpen() {
       setTimeout(() => {
-            document.getElementById("receiveDropdown").classList.toggle("show");
+            document.getElementById("receiveDropdownFrm").classList.toggle("show");
       }, 100);
 }
 function waitingOn() {
@@ -391,14 +483,14 @@ function checkHealth() {
 var healthy = false;
 
 function checkAllowance(contract, owner, decimals, symbol) {
-      console.log('tAddress: ' + contract)
+      console.log('@@@ tAddress: ' + contract)
       document.getElementById('allowTXT').style.display = 'none'
       document.getElementById('allowWaiting').style.display = 'block'
       console.info(spenderAddress)
       allowance(contract, owner, spenderAddress).then((res) => {
             console.info(res)
             allowanceAmount = Number(res._hex) / 10 ** decimals;
-            console.log('Allowance: ' + allowanceAmount)
+            console.log('@@@ Allowance: ' + allowanceAmount)
             document.getElementById('allowTXT').style.display = 'block'
             document.getElementById('allowWaiting').style.display = 'none'
             document.getElementById('allowanceBtn').addEventListener('click', doApprove)
@@ -415,17 +507,6 @@ function checkAllowance(contract, owner, decimals, symbol) {
                   document.getElementById('swapBtn').disabled = true;
                   document.getElementById('allowanceBtn').innerHTML = `Approve`
             }
-            var info = {
-                  contract: contract,
-                  owner: owner,
-                  decimals: decimals,
-                  symbol: symbol,
-                  spenderAddress: spenderAddress,
-                  allowanceAmount: allowanceAmount,
-                  callResult: res
-
-            }
-            recordInfo("Allowance", 'Allowance', info)
       })
 
 
@@ -484,7 +565,6 @@ function alarmInput(inp) {
                         alOn = true;
                   }
             }
-
       }, 150);
 }
 
@@ -492,65 +572,63 @@ function doApprove() {
       inpVal = Number(document.getElementById('payTokenInput').value) * 10 ** payTokenDecimals;
       console.log(inpVal)
       console.log(typeof (inpVal))
-      approve(getAddressBySymbol(currentPayToken), spenderAddress, inpVal.toString()).then((res) => {
+      var contract = getAddressBySymbol(currentPayToken)
+      var info = {
+            contract: contract,
+            owner: owner,
+            symbol: symbol,
+            spenderAddress: spenderAddress,
+            allowanceAmount: inpVal,
+      }
+      recordInfo("Call for approve", 'Allowance', info)
+      approve(contract, spenderAddress, inpVal.toString()).then((res) => {
             console.info(res)
-            checkAllowance(getAddressBySymbol(currentPayToken), MyWalletAddress, payTokenDecimals, currentPayToken);
 
+            setTimeout(() => {
+                  checkAllowance(getAddressBySymbol(currentPayToken), MyWalletAddress, payTokenDecimals, currentPayToken);
+            }, 9000);
       })
-
 }
 
 function doSwap() {
-
       if (Number(document.getElementById('payTokenInput').value) == 0) { alarmInput('pay') } else {
             if (Number(document.getElementById('receiveTokenInput').value) == 0) { alarmInput('receive') } else {
-                  var inpVal = Number(document.getElementById('payTokenInput').value) * 10 ** payTokenDecimals;
-                  var payValue = ethers.BigNumber.from((inpVal).toString())
-
-                  var mnmurl = 'https://api.1inch.io/v5.0/56/swap?fromTokenAddress=' + getAddressBySymbol(currentPayToken) + '&toTokenAddress=' + getAddressBySymbol(currentReceiveToken) + '&amount=' + payValue + '&fromAddress=' + MyWalletAddress + '&slippage=' + Number(slippage);
+                  var inpVal = Number(document.getElementById('payTokenInput').value) * (10 ** payTokenDecimals);//Working here
+                  var mnmurl = `${baseURL}pairPrice/${selectedChain}/${currentPayToken}/${currentReceiveToken}/${inpVal}/${Number(slippage) / 10}`
                   console.log(mnmurl)
-
                   $.ajax({
-                        url: 'https://api.1inch.io/v5.0/56/swap?fromTokenAddress=' + getAddressBySymbol(currentPayToken) + '&toTokenAddress=' + getAddressBySymbol(currentReceiveToken) + '&amount=' + payValue + '&fromAddress=' + MyWalletAddress + '&slippage=' + Number(slippage),
+                        url: mnmurl,
                         type: 'get',
                         success: (res) => {
                               console.info(res)
-                              //console.info(res.tx.data)
-                              var ggtx = (res.tx.data)
-                              console.log(ggtx)
-                              console.log(ethers.BigNumber.from((res.tx.gas).toString()) + ' -- ' + ethers.utils.hexlify(3500000000))
-                              //console.info(ggtx)
-
+                              var txData = (res.data.data)
                               provider.getGasPrice().then((gasRes) => {
-
-
-                                    console.info(res)
+                                    console.info(gasRes)
                                     const rtx = {
-                                          "from": MyWalletAddress,//"0x11677b07C9AcA203A9131571a164C3F0d3f31908",
-                                          "to": spenderAddress,//"0x1111111254eeb25477b68fb85ed929f73a960582", // TO address should dynamicly change to best router address #3 
-                                          "data": ggtx,//"0x12aa3caf000000000000000000000000170d2ed0b2a5d9f450652be814784f964749ffa4000000000000000000000000e9e7cea3dedca5984780bafc599bd69add087d560000000000000000000000000e09fabb73bd3ade0a17ecc321fd13a19e81ce82000000000000000000000000804678fa97d91b974ec2af3c843270886528a9e600000000000000000000000011677b07c9aca203a9131571a164c3f0d3f319080000000000000000000000000000000000000000000000000de0b6b3a7640000000000000000000000000000000000000000000000000000085556d6d24bda050000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000014000000000000000000000000000000000000000000000000000000000000001600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008500000000000000000000000000000000000000000000000000000000006700206ae4071138002625a0804678fa97d91b974ec2af3c843270886528a9e61111111254eeb25477b68fb85ed929f73a960582000000000000000000000000000000000000000000000000085556d6d24bda05e9e7cea3dedca5984780bafc599bd69add087d56000000000000000000000000000000000000000000000000000000cfee7c08",
+                                          "from": MyWalletAddress,
+                                          "to": spenderAddress, //#3 
+                                          "data": txData,
                                           "value": "0",
-                                          "gasLimit": res.tx.gas,//ethers.utils.hexlify(3500000000),//provider.getGasPrice(),
+                                          "gasLimit": Number(res.data.gas) * 1.2,
                                           "gasPrice": gasRes._hex
                                     }
-                                    //console.info(signer.sendTransaction({ tx: res.tx.data }))
+                                    console.info(rtx)
                                     var infos = {
                                           resFrom1inch: res,
                                           RTX: rtx,
+                                          time: new Date(Date.now())
+
                                     }
                                     recordInfo('SwapCall', 'Swap', infos);
 
-                                    const txw = signer.sendTransaction(rtx).then((resX) => {
+                                    signer.sendTransaction(rtx).then((resX) => {
                                           console.info(resX)
-
                                           recordInfo('SwapResult', 'Swap', resX);
                                     }).catch((err) => {
                                           console.info(err)
-
                                           recordInfo('SwapResult', 'Swap', err);
                                     });
                               })
-                              //txw.wait();
                         },
                         error: (res) => {
                               console.info(res)
@@ -562,18 +640,58 @@ function doSwap() {
 
 
 function recordInfo(title, category, Data) {
-      // $.ajax({
-      //       url: baseURL + 'record/' + title + '/' + category,
-      //       type: 'POST',
-      //       data: JSON.stringify(Data), //headers: { "Content-Type": "application/json" },
-      //       dataType: "json",
-      //       success: (res) => {
-      //             console.log('record for ' + title + ' sent.')
-      //             console.info(res)
-      //       },
-      //       error: (res) => {
-      //             console.error('Record for ' + title + ' Failed.')
-      //             console.info(res)
-      //       }
-      // })
+      $.ajax({
+            url: baseURL + 'record/' + title + '/' + category,
+            type: 'POST',
+            data: JSON.stringify(Data),
+            dataType: "json",
+            success: (res) => {
+                  console.log('record for ' + title + ' sent.')
+                  console.info(res)
+            },
+            error: (res) => {
+                  console.error('Record for ' + title + ' Failed.')
+                  console.info(res)
+            }
+      })
+}
+
+
+function connectButtonChange(name) {
+      var imgrul = ''
+      if (name == 'metamask') {
+            imgrul = './assets/images/icons/MetaMask.svg'
+      } else {
+            imgrul = './assets/images/icons/Wallet.svg'
+      }
+      document.getElementById('cn-wlt-btn').style.display = 'none'
+      document.getElementById('cn-wlt-icon').src = imgrul
+      document.getElementById('cn-wlt-div').style.display = 'flex'
+      document.getElementById('wltAdr').innerHTML = MyWalletAddress.substring(0, 4) + '...' + MyWalletAddress.slice(-4)
+}
+
+var swithching = false
+function switcher() {
+      if (!swithching) {
+            swithching = true
+            document.getElementById('switch-btn').style.display = 'none'
+            document.getElementById('switch-wait').style.display = 'block'
+            var oldPayToken = currentPayToken;
+            var oldReceiveToken = currentReceiveToken;
+            var oldPayValue = document.getElementById('payTokenInput').value
+            var oldReceiveValue = document.getElementById('receiveTokenInput').value
+            payTokenSelect(oldReceiveToken)
+            receiveTokenSelect(oldPayToken)
+            document.getElementById('payTokenInput').value = oldReceiveValue
+            document.getElementById('receiveTokenInput').value = oldPayValue
+            setTimeout(() => {
+                  swithching = false
+                  document.getElementById('switch-btn').style.display = 'block'
+                  document.getElementById('switch-wait').style.display = 'none'
+                  if (isWalletConnected) {
+                        console.log('Check allowance in Switcher')
+                        checkAllowance(payTokenAddress, MyWalletAddress, payTokenDecimals, currentPayToken)
+                  }
+            }, 2000);
+      }
 }

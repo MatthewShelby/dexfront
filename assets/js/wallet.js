@@ -1,69 +1,82 @@
-var provider, signer, MyWalletAddress
+var provider, signer, MyWalletAddress, walletName, walletNetworkId
+var isWalletConnected = false;
 var wNames = new Array();
 var BUSD = '0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56'
 
-function ca(cc) {
-      allowance(BUSD, MyWalletAddress, cc).then((r) => {
-            console.info(r)
-            console.log(Number(r._hex))
-      })
+function connectWallet() {
+      console.log('## HERE - 11')
+
+      checkForWallet(true)
 }
 
-function checkForWallet() {
+
+function checkForWallet(alert) {
+      console.log('## HERE - 1')
+
       if (window.ethereum) {
-            window.ethereum.enable()
-            console.info(window.ethereum)
-            /*
-                        var allWalls = window.ethereum.providers
-                        console.info(allWalls)
-                        for (let i = 0; i < allWalls.length; i++) {
-                              const element = allWalls[i];
-                              var pname = '';
-                              if (element.isMetaMask) {
-                                    pname = { name: 'Metamask', sym: 'm', index: i }
+            console.log('## HERE - 2')
+
+            window.ethereum.enable().then((res) => {
+                  console.log('## HERE - 3')
+                  console.info(res)
+
+                  console.info(window.ethereum)
+                  provider = new ethers.providers.Web3Provider(window.ethereum)
+                  console.info(provider)
+                  walletName = provider.connection.url
+                  console.log('walletName: ' + walletName)
+                  provider.getNetwork().then((nres) => {
+                        console.log('chain id: ' + nres.chainId)
+
+                        walletNetworkId = nres.chainId
+                        signer = provider.getSigner()
+                        console.info(signer)
+                        signer.getAddress().then((sres) => {
+                              console.log('## HERE - 4')
+                              MyWalletAddress = sres
+                              connectButtonChange(walletName)
+
+                              if (walletNetworkId == selectedChainId) {
+                                    console.log('## HERE - 8 same chain id')
+                                    isWalletConnected = true
+                                    checkAllowance(payTokenAddress, MyWalletAddress, 18, currentPayToken)
+                              } else {
+                                    console.log('## HERE - 9   diffrent chain id')
+
                               }
-                              if (element.isCoinbaseWallet) {
-                                    pname = { name: 'Coinbase', sym: 'c', index: i }
-                              }
-                              if (element.isTrustWallet) {
-                                    pname = { name: 'TrustWallet', sym: 't', index: i }
-                              }
-                              wNames[i] = pname;
-                        }*/
-            //window.ethereum.enable(ethereum.providers[0])
-            // const accounts = ethereum.request({ method: 'eth_requestAccounts' }).then((res) => {
-            //       console.info(res)
-
-            // });
-
-
-
-
-            //console.info(wNames)
-            provider = new ethers.providers.Web3Provider(window.ethereum)
-            console.info(provider)
-            signer = provider.getSigner()
-            console.info(signer)
-            signer.getAddress().then((res) => {
-                  MyWalletAddress = res
+                        })
+                  });
             })
-
-            // chechAllowance(BUSD, '0x11677b07C9AcA203A9131571a164C3F0d3f31908', '0x0ed8e0a2d99643e1e65cca22ed4424090b8b7458').then((res) => {
-            //       console.info(res)
-            //       allowance = Number(res._hex)
-            // })
-
-
+            //console.log('## HERE - 5')
 
       } else {
-            window.alert('Wallet not faound.')
+            console.log('## HERE - 6')
+
+            if (alert) {
+                  console.log('## HERE - 7')
+
+                  window.alert('Wallet not faound.')
+            }
       }
 }
 
 var allowanceAmount = 0;
 
 async function allowance(contractAddress, ownerAddress, spenderAddress) {
+      console.log('wallet.js allowance 1' + ' & ' + contractAddress + ' & ' + ownerAddress + ' & ' + spenderAddress)
       var Contract = new ethers.Contract(contractAddress, ERC20ABI, signer);
+      console.log('wallet.js allowance 2')
+      //return await Contract.allowance(ownerAddress, spenderAddress)
+      provider.getCode(contractAddress).then((res) => {
+            console.log('wallet.js allowance 3')
+            console.info(res.substring(0, 20))
+      })
+
+      // Contract.allowance(ownerAddress, spenderAddress).then((res) => {
+      //       console.log('wallet.js allowance 4 allowance amount here')
+      //       console.info(res)
+      //       return  Promise.resolve(res)
+      // })
       return await Contract.allowance(ownerAddress, spenderAddress)
 }
 

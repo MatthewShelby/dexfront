@@ -7,6 +7,10 @@
 </head>
 
 <body>
+
+
+
+
       <div>
             <div class="my-body">
 
@@ -39,9 +43,19 @@
                         </span>
 
                         <span>
-                              <button class="dropbtn">
+                              <button class="dropbtn" onclick="connectWallet()" id="cn-wlt-btn">
                                     <span class="cnw vercenter"> Connect Wallet</span>
                               </button>
+                              <div class="dropdiv" id="cn-wlt-div">
+                                    <span class="cnw vercenter">
+                                          <span>
+                                                <img src="assets/images/Icons/MetaMask.svg" alt="" id="cn-wlt-icon">
+                                          </span> &nbsp;&nbsp;
+                                          <span id="wltAdr">
+                                                0x142....9458
+                                          </span>
+                                    </span>
+                              </div>
                         </span>
 
                   </div>
@@ -103,8 +117,9 @@
                                     </div>
                               </div>
 
-                              <div id="payDropdown" class="dropdown-content">
-                                    <!-- <span class="chain-opt" onclick="payToeknSelect('WETH')">
+                              <div id="payDropdownFrm" class="dropdown-content dropdown-frame">
+                                    <div id="payDropdown" class="dropdown-content mscrollbar dropdown-inside">
+                                          <!-- <span class="chain-opt" onclick="payToeknSelect('WETH')">
                                           <img src="assets/images/ETHCH.png" class="menuImg" alt="">
                                           <span> Ethereum </span>
                                     </span>
@@ -112,16 +127,20 @@
                                                 src="assets/images/BSCCH.png" class="menuImg" alt="">
                                           <span> Binance Smart Chain </span>
                                     </span> -->
+                                    </div>
                               </div>
 
-                              <input type="number" class=" amuToken amuText" value="0.0" id="payTokenInput"> </input>
+                              <input type="number" class=" amuToken amuText" value="0.0" id="payTokenInput">
+                              </input>
                         </div>
                         <div style="padding: 4px 16px; " class="row vercenter around">
                               <span style="width: 45%;">
                                     <hr>
                               </span>
                               <img src="assets/images/Icons/ar-dw-change-white.svg" alt=""
-                                    style="max-width: 32px; cursor: pointer;">
+                                    style="max-width: 32px; cursor: pointer;" id="switch-btn" onclick="switcher()">
+                              <img src="./assets/images/Loding.gif" alt="" style="width: 32px; display: none;"
+                                    id="switch-wait">
                               <span style="width: 45%;">
                                     <hr>
                               </span>
@@ -139,17 +158,41 @@
                                           </span>
                                     </div>
                               </div>
+                              <div id="receiveDropdownFrm" class="dropdown-content dropdown-frame">
 
-                              <div id="receiveDropdown" class="dropdown-content">
+                                    <div id="receiveDropdown" class="dropdown-content mscrollbar dropdown-inside">
+                                    </div>
                               </div>
-
                               <input type="number" class=" amuToken amuText" value="0.0" id="receiveTokenInput">
                               </input>
 
                         </div>
+                        <!-- <div style="padding: 4px 16px; ">
+                              <hr>
+                        </div> -->
+
+
+                        <!-- The part for showing the fetched price -->
+
+
+                        <div class="actionButtons vercenter row around" style="justify-content: center;height: 0px;">
+                              <span id="fetchedPrice" class="explain">
+                              </span>
+                              <span id="fetchedPriceWait" class="explain">
+                                    <img src="assets/images/Pulse1.svg" alt="" style="max-width: 20px;">
+                              </span>
+
+                        </div>
+
                         <div style="padding: 4px 16px; ">
                               <hr>
                         </div>
+
+                        <!-- End -->
+
+
+
+
                         <style>
                               .tokenImg {
                                     display: flex;
@@ -159,6 +202,10 @@
                               .tokenSym {
                                     display: flex;
                                     text-align: center;
+                              }
+
+                              .tokenSym span {
+                                    max-width: 1rem;
                               }
 
                               .actionButtons {
@@ -213,9 +260,20 @@
                         <br>
                   </div>
                   <br>
+
+                  <div class="horcenter">
+                        <p class="fott-p">Designed and developed by <a href="mailto:matthewshelb@gmail.com">Matthew
+                                    Shelby</a></p>
+                        <br>
+                  </div>
             </div>
       </div>
 
+
+
+
+
+      <!-- #region JS SRCs -->
       <!-- Jquery -->
       <script src="https://code.jquery.com/jquery-3.7.0.js"
             integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
@@ -237,70 +295,27 @@
       <!-- Metamask Wallet -->
       <script src="./assets/js/wallet.js"></script>
 
-      <style type="text/css">
-            @keyframes ldio-z9ztwszgbu {
-                  0% {
-                        transform: rotate(0deg)
-                  }
-
-                  50% {
-                        transform: rotate(180deg)
-                  }
-
-                  100% {
-                        transform: rotate(360deg)
-                  }
-            }
-
-            .ldio-z9ztwszgbu div {
-                  position: absolute;
-                  animation: ldio-z9ztwszgbu 1s linear infinite;
-                  width: 160px;
-                  height: 160px;
-                  top: 20px;
-                  left: 20px;
-                  border-radius: 50%;
-                  box-shadow: 0 6.6000000000000005px 0 0 #146ba3;
-                  transform-origin: 80px 83.3px;
-            }
-
-            .loadingio-spinner-eclipse-s2xqrchhj7 {
-                  width: 200px;
-                  height: 200px;
-                  display: inline-block;
-                  overflow: hidden;
-                  background: none;
-            }
-
-            .ldio-z9ztwszgbu {
-                  width: 100%;
-                  height: 100%;
-                  position: relative;
-                  transform: translateZ(0) scale(1);
-                  backface-visibility: hidden;
-                  transform-origin: 0 0;
-                  /* see note above */
-            }
-
-            .ldio-z9ztwszgbu div {
-                  box-sizing: content-box;
-            }
-
-            /* generated by https://loading.io/ */
-      </style>
-
+      <!-- #endregion -->
       <script>
 
             $(document).ready(() => {
                   waitingOn()
                   console.log('Ready => Start')
-                  checkForWallet()
+
                   //waitingOff()
                   addEf()
                   checkHealth()
+                  //ChsinSelectBSC()
+                  //waitingOff()
             })
 
-
+            function getDecimals(n) {
+                  var token = chainTokens[0];
+                  var Contract = new ethers.Contract(token.address, ERC20ABI, signer);
+                  Contract.symbol().then((res) => {
+                        console.log(token.symbol + ' decimal place is: ' + res)
+                  })
+            }
 
             function changeWallet() {
                   window.ethereum.request({
@@ -321,6 +336,8 @@
                         console.info(res)
                   });
             }
+
+
       </script>
 </body>
 
